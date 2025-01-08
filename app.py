@@ -3,8 +3,17 @@ from operador import Operador
 
 # Crea un operador que manejará el procesamiento de los datos
 operador = Operador()
+
+def archivo_encontrado(sender, app_data, user_data):
+    operador.cargar_novedades(app_data['file_path_name'])
+
+def actualizar_novedad(sender, app_data, user_data):
+    print(app_data, user_data)
+    operador.actualizar_novedad(id=user_data, novedad=app_data)
+
 # Función para actualizar la tabla de reloj
 def actualizar_tabla():
+    novedades = operador.obtener_novedades()
     # Limpiamos la tabla antes de actualizarla
     rows = dpg.get_item_children(item='tabla_reloj', slot=1)
     for row in rows:
@@ -32,7 +41,7 @@ def actualizar_tabla():
                 dpg.add_text(marca.f_salida, color=[175,0,0])
             else:
                 dpg.add_text(marca.f_salida)
-            dpg.add_text(marca.novedad)
+            dpg.add_combo(default_value=marca.novedad, items=novedades, callback=actualizar_novedad, user_data=marca.id_marca)
             dpg.add_text(marca.observaciones)
 
 # Función para actualizar la tabla de horas semanales
@@ -67,11 +76,22 @@ def listar():
     actualizar_tabla()
     actualizar_tabla_horas()
 
+# Función de callback para exportar los datos desde el menú
+
 # Configuración inicial de la ventana principal
 dpg.create_context()
 dpg.create_viewport(title="Consolidado de Asistencia", width=1750, height=690)
 
 with dpg.window(tag="MainWindow", label="Consolidación de Asistencia", width=1600, height=560, pos=(0,30), menubar=True):
+
+    # Menú de opciones
+    with dpg.menu_bar():
+        with dpg.menu(label='Datos'):
+            dpg.add_menu_item(label='Exportar los datos en EXCEL', callback=lambda: operador.exportar_datos(filtros={'fecha_inicio': dpg.get_value('w_fecha_inicio'),'fecha_fin': dpg.get_value('w_fecha_fin'),'sucursal': dpg.get_value('w_sucursal'),'n_empleado': dpg.get_value('w_n_empleado'),'novedad': dpg.get_value('w_novedad'),'nombre': dpg.get_value('w_nombre'),'funcion': dpg.get_value('w_funcion')}))
+        with dpg.menu(label='Empleados'):
+            dpg.add_menu_item(label='Cargar novedades desde ficha', callback=lambda: dpg.show_item('ventana_cargar_novedades'))
+
+    # Grupo correspondiente al quinto superior de la pantalla
     with dpg.group(horizontal=True, width=220, height=100):
         with dpg.group(horizontal=True, width=180, height=20):
             with dpg.group(horizontal=False, width=30, height=100):
@@ -99,7 +119,7 @@ with dpg.window(tag="MainWindow", label="Consolidación de Asistencia", width=16
                     dpg.add_button(label='Listar', callback= listar)
                     dpg.add_button(label='Reportes')            
         
-            
+    # Código correspondiente al resto de la pantalla (tab bar).
     with dpg.tab_bar(label='Tabs'):
         with dpg.tab(label='Reloj particular'):                
             with dpg.group(horizontal=False,width=1620, height=500):
@@ -116,8 +136,8 @@ with dpg.window(tag="MainWindow", label="Consolidación de Asistencia", width=16
                     dpg.add_table_column(label='F/almuerzo regreso', width_stretch=True, init_width_or_weight=1)
                     dpg.add_table_column(label='Hora salida')
                     dpg.add_table_column(label='F/salida')
-                    dpg.add_table_column(label='Novedad', width_stretch=True, init_width_or_weight=1)
-                    dpg.add_table_column(label='Observaciones', width_stretch=True, init_width_or_weight=2)
+                    dpg.add_table_column(label='Novedad', width_stretch=True, init_width_or_weight=2)
+                    dpg.add_table_column(label='Observaciones', width_stretch=True, init_width_or_weight=4)
                     dpg.add_table_column(label='Análisis', width_stretch=True, init_width_or_weight=2)
         
         with dpg.tab(label='Horas semanales'):                
@@ -130,8 +150,16 @@ with dpg.window(tag="MainWindow", label="Consolidación de Asistencia", width=16
                     dpg.add_table_column(label='Semana', width_stretch=True, init_width_or_weight=1)
                     dpg.add_table_column(label='Horas trabajadas', width_stretch=True, init_width_or_weight=1)
                     
-                    
 
+with dpg.file_dialog(label='Búsqueda de archivo', show=False, id='buscar_ficha_novedades', callback=archivo_encontrado):
+    dpg.add_file_extension(".xlsx", color=(0, 255, 0, 255))  # Archivos .xlsx en verde
+    dpg.add_file_extension(".xls", color=(255, 0, 0, 255))  # Archivos .xls en rojo
+    dpg.add_file_extension(".*")                            # Otros archivos
+
+with dpg.window(label='Cargar novedades', tag='ventana_cargar_novedades', show=False):
+    dpg.add_text('Cargar novedades')
+    dpg.add_text('Elija el archivo desde el cual cargar novedades: ')
+    dpg.add_button(label='Buscar archivo', callback=lambda:dpg.show_item('buscar_ficha_novedades'))
 
 
 # Configuración y visualización del viewport

@@ -1,5 +1,6 @@
 class Marca:
     def __init__(self, mar:dict):
+        self.id_marca = mar['id_marca']
         self.fecha = mar['fecha']
         self.dia = mar['dia']
         self.sucursal = mar['sucursal']
@@ -18,6 +19,7 @@ class Marca:
             self.f_almuerzo_entrada = None
         self.hs_salida = self.format_fecha(mar['hs_salida'])
         self.f_salida = self.format_fecha(mar['f_salida'])
+        self.hs_trabajadas = mar['horas_trabajadas']
         self.novedad = mar['novedad']
         self.observaciones = mar['observaciones']
         # Análisis? qué va en análisis?

@@ -1,6 +1,7 @@
 from controlador_db import Controlador_DB
 from marca import Marca, Marca_Semanal
 from datetime import datetime, timedelta
+from lector import Lector
 
 class Operador:
     def __init__(self):
@@ -16,6 +17,7 @@ class Operador:
         }
         self.marcas = []
         self.marcas_horas = []
+        self.lector = Lector()
 
     def obtener_novedades(self):
         res = self.db.obtener_novedades()
@@ -42,13 +44,13 @@ class Operador:
         try:
             res = self.db.obtener_marcas(filtros)
         except:
-            print(Exception)
             self.marcas = []
             return self.marcas
         self.marcas = []
         if res != False:
             for element in res:
                 mar = {
+                    'id_marca': element['id_marca'],
                     'fecha': element['fecha_marca'],
                     'dia': self.dias[element['dia']],
                     'sucursal': element['sucursal'],
@@ -63,7 +65,8 @@ class Operador:
                     'hs_salida': element['horario_salida'],
                     'f_salida': element['hs_salida'],
                     'novedad': element['nombre_novedad'],
-                    'observaciones': element['observaciones']
+                    'observaciones': element['observaciones'],
+                    'horas_trabajadas': element['horas_trabajadas']
                 }
                 self.marcas.append(Marca(mar))
 
@@ -110,3 +113,18 @@ class Operador:
                     'horas':element['horas_trabajadas']
                 }
                 self.marcas_horas.append(Marca_Semanal(mar=mar))
+
+    def obtener_cant_marcas(self, filtros):
+        res = self.db.obtener_ma
+
+    def exportar_datos(self, filtros):
+        horasxnum = self.db.obtener_horas_totales_por_numero(filtros)
+        self.lector.exportar_datos(self.marcas, self.marcas_horas, horasxnum)
+        
+
+    def cargar_novedades(self, ruta_excel):
+        novedades = self.lector.obtener_novedades(ruta_excel)
+        self.db.cargar_novedades_ficha(novedades)
+
+    def actualizar_novedad(self, id, novedad):
+        self.db.actualizar_novedad(id, novedad)
